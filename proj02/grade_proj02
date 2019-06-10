@@ -1,0 +1,86 @@
+#! /bin/bash
+
+
+PROJ_FILE=proj02.s
+
+
+if [[ ! -f ${PROJ_FILE} ]]
+then
+  echo "Cannot find the required project file '${PROJ_FILE}'."
+  exit 1
+fi
+
+
+attempts=0
+pass=0
+
+failList=""
+
+
+for t in $(ls -1 test*.s | rev | cut -f2- -d'.' | rev)
+do
+  attempts=$(( attempts+1 ))
+
+  #echo "+------------------------------------------"
+  #echo "| Beginning test '$t'"
+  #echo "+------------------------------------------"
+
+  if [[ ! -f $t.out ]]
+  then
+    echo "ERROR: The testcase file '$t.s' was found, but could not find a matching output file '$s.out'"
+
+    failList="$failList
+*     $t"
+    continue
+  fi
+
+  # run the testcase!
+  #echo "     ----- diff OUTPUT ----    (if this is empty, that's good!)"
+  dOut=$(diff $t.out <(timeout 5s spim -f <(cat ${PROJ_FILE} $t.s) 2>&1 | tail -n+6))
+
+  #echo "     ----- END diff OUTPUT ----"
+
+  if [[ $dOut != "" ]]
+  then
+    echo "******************************"
+    echo "* TESTCASE '$t' FAILED"
+    echo "******************************"
+    echo
+    echo "     ----- CORRECT OUTPUT ----"
+    cat $t.out
+    echo "     ----- ACTUAL OUTPUT ----"
+    timeout 5s spim -f <(cat ${PROJ_FILE} $t.s) 2>&1 | tail -n+6
+    echo "     ----- diff OUTPUT ----"
+    echo "$dOut"
+    echo "     ----- END diff ----"
+    echo
+
+    failList="$failList
+*     $t"
+    continue
+  fi
+
+  echo "******************************"
+  echo "* Testcase '$t' passed"
+  echo "******************************"
+  pass=$(( pass+1 ))
+
+  echo
+done
+
+
+echo "*******************************************"
+echo "*            OVERALL REPORT"
+echo "* attempts: $attempts"
+echo "* passed:   $pass"
+
+if [[ $failList != "" ]]
+then
+  echo "*"
+  echo "* failed:  $failList"
+  echo "*"
+fi
+
+echo "*******************************************"
+
+

@@ -1,0 +1,218 @@
+.data
+newline: .asciiz "\n"
+at: .asciiz "@"
+brek: .asciiz "["
+
+.text
+main:
+	# Prologue: set up stack and frame pointers for main
+    	addiu   $sp, $sp, -24    # allocate stack space -- default of 24 here
+      	sw      $fp, 0($sp)      # save caller's frame pointer
+     	sw      $ra, 4($sp)      # save return address
+      	addi    $fp, $sp, 20     # setup main's frame pointer
+
+	#Start program
+	la $t0, integers
+	lb $s0, 0($t0)
+
+	la $t0, forward
+	lb $s1, 0($t0)
+
+	slt $t0, $zero, $s0
+	beq $t0, $zero, printStr
+	j printInt	
+
+printInt:
+	slt $t0, $zero, $s1
+	beq $t0, $zero, printIntBack
+	j printIntForward
+
+printStr:
+	slt $t0, $zero, $s1
+	beq $t0, $zero, printStrBack
+	j printStrForward
+
+printIntForward:
+	addi $s1, $zero, 0 # i = 0
+	la $t0, numInts	
+	lw $s2, 0($t0) # $s2 = numInts
+	la $t0, ints # $t0 = address of elements[0]
+	j loopBeginPrintIntForward
+	
+
+printIntBack:
+	la $t0, numInts
+	lw $s0, 0($t0)
+	sub $s0, $s0, 1 # $s0 = numInts - 1
+	la $t0, ints # $t0 = address of elements[0]
+	sub $s1, $zero, 0 # i = -1
+	j loopBeginPrintIntBack
+
+printStrForward:
+	la $t0, str # t0 = address of str
+	addi $s1, $zero, 0 # i = 0;
+	j  loopBeginPrintStrForward
+
+printStrBack:
+	la $t0, str # t0 = address of str
+	addi $s1, $zero, 0 # i = 0;
+	j  endOfString
+
+# loop for foward int
+loopBeginPrintIntForward:
+	# test if for loop is done
+	slt $t1, $s1, $s2 # $t1 = i < numInts
+	beq $t1, $zero, loopEnd
+	# Compute address of elements[i] foward to back
+	add $t1, $s1, $s1
+	add $t1, $t1, $t1 # $t1 = 4 * 1
+	add $t2, $t0, $t1 # $t2 = address of elements[i]
+	
+	lw $s0, 0($t2)
+	
+	bne $s0, $zero, continue
+	addi $s1, $s1, 1 # i++
+	j loopBeginPrintIntForward
+
+continue:
+	# print elements[i]
+	lw $a0, 0($t2) # $a0 = elements[i]
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la $a0, newline
+	addi $v0, $zero, 4
+	syscall
+	addi $s1, $s1, 1 # i++
+	j loopBeginPrintIntForward
+
+#loop for backward int
+loopBeginPrintIntBack:
+	# test if for loop is done
+	slt $t1, $s1, $s0
+	beq $t1, $zero, loopEnd
+	#compute address of elements[i] back to forward
+	add $t1, $s0, $s0
+	add $t1, $t1, $t1 # $t1 = 4 * (numInts - 1)
+	add $t2, $t0, $t1 # t2 = address of elements[numInts - 1]
+
+	lw $a0, 0($t2) # $a0 = elements[numInts - 1]
+	addi $v0, $zero, 1
+	syscall
+	
+	# print newline
+	la $a0, newline
+	addi $v0, $zero, 4
+	syscall
+
+	sub $s0, $s0, 1 # numInts--
+	j loopBeginPrintIntBack
+
+#loop for foward str
+loopBeginPrintStrForward:
+	
+	
+	add $t2, $t0, $s1
+	lb $t1, 0($t2)
+
+	beq $t1, $zero, loopEnd # end if str point to \0
+
+	la $t4, at
+	lb $s2, 0($t4)
+	
+	la $t4, brek
+	lb $s3, 0($t4)
+
+	# print str character
+	slt $t4, $s2, $t1
+	beq $t4, $zero, strForwardPrint1
+
+
+	slt $t4, $t1, $s3
+	beq $t4, $zero, strForwardPrint2
+
+	add $s1, $s1, 1
+	j loopBeginPrintStrForward
+
+strForwardPrint1:
+	lb $a0, 0($t2) # $a0 = str[i]
+	addi $v0, $zero, 11
+	syscall
+
+	# print newline
+	la $a0, newline
+	addi $v0, $zero, 4
+	syscall
+	add $s1, $s1, 1
+	j loopBeginPrintStrForward
+
+strForwardPrint2:
+	lb $a0, 0($t2) # $a0 = str[i]
+	addi $v0, $zero, 11
+	syscall
+
+	# print newline
+	la $a0, newline
+	addi $v0, $zero, 4
+	syscall
+
+	add $s1, $s1, 1
+	j loopBeginPrintStrForward
+
+#count str length to read backward
+endOfString:
+	
+	add $t2, $t0, $s1 # at the end t2 is point to null
+	lb $t1, 0($t2)
+	beq $t1, $zero, setT0minus1
+
+	addi $s1, $s1, 1
+	j endOfString
+setT0minus1:
+	sub $t0, $t0, 1
+	j loopBeginPrintStrBackward
+
+# loop for backward str
+loopBeginPrintStrBackward:
+
+	
+	add $t2, $t0, $s1
+	lb $t1, 0($t2)
+	beq $t2, $t0, loopEnd
+
+	lb $a0, 0($t2)
+	addi $v0, $zero, 11
+	syscall
+
+	# print newline
+	la $a0, newline
+	addi $v0, $zero, 4
+	syscall
+	sub $s1, $s1, 1
+
+	j loopBeginPrintStrBackward
+
+loopEnd:
+
+done:    # Epilogue for main -- restore stack & frame pointers and return
+         lw    $ra, 4($sp)    # get return address from stack
+         lw    $fp, 0($sp)    # restore the caller's frame pointer
+         addiu $sp, $sp, 24   # restore the caller's stack pointer
+         jr    $ra            # return to caller's code
+.data
+
+integers:	.byte	0
+forward:	.byte	0
+
+numInts:	.word	6
+
+ints:		.word	123
+		.word	0
+		.word	-17
+		.word	0
+		.word	123456789
+		.word	0
+
+str:		.asciiz	"The quick brown fox jumps over the lazy dog."
+
