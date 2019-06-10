@@ -1,0 +1,123 @@
+#! /bin/bash
+
+
+PROJ_FILE=proj04.s
+
+
+if [[ ! -f ${PROJ_FILE} ]]
+then
+  echo "Cannot find the required project file '${PROJ_FILE}'."
+  exit 1
+fi
+
+
+if [[ $(grep syscall ${PROJ_FILE}) != "" ]]
+then
+  echo "ERROR: The file ${PROJ_FILE} contains the string 'syscall'.  This is BANNED on this project.  Please remove the string from your program, and rerun this grading script." 1>&2
+  exit 1
+fi
+
+
+if [[ $(grep -E "[$]t[0-9]" ${PROJ_FILE}) != "" ]]
+then
+  echo "ERROR: The file ${PROJ_FILE} contains a mention of one of the tX registers.  These registers are BANNED on this project.  Please update your program to use sX registers instead, and rerun this grading script." 1>&2
+  exit 1
+fi
+
+
+# did the student include the "STUDENT CODE BELOW" marker?
+if [[ $(grep "STUDENT CODE BELOW" $PROJ_FILE | wc -l) = 1 ]]
+then
+  cutPos=$(grep -n "STUDENT CODE BELOW" $PROJ_FILE | cut -f1 -d':')
+
+  echo "'STUDENT CODE BELOW' found at line $cutPos."
+  echo
+else
+  echo "NOTE: The script did not find the text 'STUDENT CODE BELOW' in the project file, so it will not attempt to remove any testcase variables from the file."
+  echo
+
+  cutPos=1
+fi
+
+
+attempts=0
+pass=0
+
+failList=""
+
+
+for t in $(ls -1 test*.s | rev | cut -f2- -d'.' | rev)
+do
+  attempts=$(( attempts+1 ))
+
+  #echo "+------------------------------------------"
+  #echo "| Beginning test '$t'"
+  #echo "+------------------------------------------"
+
+  if [[ ! -f $t.out ]]
+  then
+    echo "ERROR: The testcase file '$t.s' was found, but could not find a matching output file '$s.out'"
+
+    failList="$failList
+*     $t"
+    continue
+  fi
+
+  # run the testcase!
+  #echo "     ----- diff OUTPUT ----    (if this is empty, that's good!)"
+  dOut=$(diff $t.out <(timeout 5s spim -f <(cat ${PROJ_FILE} $t.s | tail -n+$cutPos) 2>&1 | tail -n+6) | sed 's/\x00/!/')
+	# WORKAROUND: spim will sometimes produce output (after an exception)
+	# which includes a null character.  This sed command removes it, and
+	# replaces it with a bang.  Thanks to
+	#     http://unix.stackexchange.com/questions/36734/is-there-a-way-to-detect-null-bytes-nul-0-in-sed
+	#
+	# Small follow-up: It appears that this happens *ONLY* when you have
+	# multiple exceptions in a row.  A single exception doesn't have this
+	# problem.
+
+  #echo "     ----- END diff OUTPUT ----"
+
+  if [[ $dOut != "" ]]
+  then
+    echo "******************************"
+    echo "* TESTCASE '$t' FAILED"
+    echo "******************************"
+    echo
+    echo "     ----- CORRECT OUTPUT ----"
+    cat $t.out
+    echo "     ----- ACTUAL OUTPUT ----"
+    timeout 5s spim -f <(cat ${PROJ_FILE} $t.s | tail -n+$cutPos) 2>&1 | tail -n+6 | sed 's/\x00/!/'
+    echo "     ----- diff OUTPUT ----"
+    echo "$dOut"
+    echo "     ----- END diff ----"
+    echo
+
+    failList="$failList
+*     $t"
+    continue
+  fi
+
+  echo "******************************"
+  echo "* Testcase '$t' passed"
+  echo "******************************"
+  pass=$(( pass+1 ))
+
+  echo
+done
+
+
+echo "*******************************************"
+echo "*            OVERALL REPORT"
+echo "* attempts: $attempts"
+echo "* passed:   $pass"
+
+if [[ $failList != "" ]]
+then
+  echo "*"
+  echo "* failed:  $failList"
+  echo "*"
+fi
+
+echo "*******************************************"
+
+
