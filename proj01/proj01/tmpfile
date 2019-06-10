@@ -1,0 +1,457 @@
+.data
+
+printString: .asciiz "Printing the four values:\n"
+sumString: .asciiz "Running totals: \n"
+mulString: .asciiz "Multiplying each value by 7: "
+minimumString: .asciiz "Minimum: "
+space: .asciiz "   "
+newline: .asciiz "\n"
+
+
+y: .word 7
+x: .word 4
+turn: .word 1
+turn1: .word 2
+turn2: .word 3
+turn3: .word 4
+
+.text
+
+main:
+	# Prologue: set up stack and frame pointers for main
+    	addiu   $sp, $sp, -24    # allocate stack space -- default of 24 here
+      	sw      $fp, 0($sp)      # save caller's frame pointer
+     	sw      $ra, 4($sp)      # save return address
+      	addi    $fp, $sp, 20     # setup main's frame pointer
+
+selectP:
+	la $t0, print
+	lw $s0, 0($t0)
+	slt $t0, $zero, $s0
+	beq $t0, $zero, selectS
+	j Print
+selectS:
+	la $t0, sum
+	lw $s0, 0($t0)
+	slt $t0, $zero, $s0
+	beq $t0, $zero, selectM
+	j Sum
+selectM:
+	la $t0, multiply
+	lw $s0, 0($t0)
+	slt $t0, $zero, $s0
+	beq $t0, $zero, selectMin
+	j MultiplyFoo
+selectMin:
+	la $t0, minimum
+	lw $s0, 0($t0)
+	slt $t0, $zero, $s0
+	beq $t0, $zero, done
+	j MinimumFoo
+
+Print:
+	# set up and print the string "printString"
+	la $a0, printString
+	addi $v0, $zero, 4
+	syscall
+
+	la $t0, foo
+	lb $s0, 0($t0)
+
+	la $t0, print
+	sw $s0, 0($t0)
+
+	# print foo
+	add $a0, $s0, $zero  
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	la $t0, bar
+	lw $s0, 0($t0)
+
+	la $t0, print
+	sw $s0, 0($t0)
+
+	# print bar
+	add $a0, $s0, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	la $t0, baz
+	lw $s0, 0($t0)
+
+	la $t0, print
+	sw $s0, 0($t0)
+
+	# print baz
+	add $a0, $s0, $zero
+	addi $v0, $zero, 1
+	syscall	
+	
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	la $t0, fred
+	lh $s0, 0($t0)
+	
+	la $t0, print
+	sw $s0, 0($t0)
+
+	# print fred
+	add $a0, $s0, $zero
+	addi $v0, $zero, 1
+	syscall
+	
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+
+	# make print = 0
+	j selectS
+Sum:
+	# Print the sum values
+	
+	# set up and print the string "printString"
+	la $a0, sumString
+	addi $v0, $zero, 4
+	syscall
+
+	la $t0, foo
+	lb $s0, 0($t0)
+	la $t0, bar
+	lw $s1, 0($t0)
+	la $t0, baz
+	lw $s2, 0($t0)
+	la $t0, fred
+	lh $s3, 0($t0)
+
+	add $s4, $s0, $zero
+
+	la $t0, sum
+	sw $s4, 0($t0)
+
+	# Print first sum
+	add $a0, $s4, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	add $s4, $s4, $s1
+	
+	la $t0, sum
+	sw $s4, 0($t0)
+
+	# Print second sum
+	add $a0, $s4, $zero
+	addi $v0, $zero, 1
+	syscall
+	
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+
+	add $s4, $s4, $s2
+
+	la $t0, sum
+	sw $s4, 0($t0)
+
+	# Print second sum
+	add $a0, $s4, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+
+	add $s4, $s4, $s3
+	
+	la $t0, sum
+	sw $s4, 0($t0)
+
+	# Print second sum
+	add $a0, $s4, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        addi $v0, $zero, 4
+        syscall
+
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+
+	# make sum = 0
+	j selectM
+
+MultiplyFoo:
+	
+	# set up and print the string "mulString"
+	la $a0, mulString
+	addi $v0, $zero, 4
+	syscall
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+
+	la $t0, foo
+	lb $s0, 0($t0)
+
+	la $t0, y
+	lw $s1, 0($t0)
+
+	add $s2, $zero, $zero # sum=0
+	add $t0, $zero, $zero # i=0
+
+	j LoopBeginFoo
+MultiplyBar:
+
+	la $t0, bar
+	lb $s0, 0($t0)
+	
+	la $t0, y
+	lw $s1, 0($t0)
+
+	add $s2, $zero, $zero # sum=0
+	add $t0, $zero, $zero # i=0
+	
+	j LoopBeginBar
+
+MultiplyBaz:
+
+	la $t0, baz
+	lb $s0, 0($t0)
+	
+	la $t0, y
+	lw $s1, 0($t0)
+
+	add $s2, $zero, $zero # sum=0
+	add $t0, $zero, $zero # i=0
+	j LoopBeginBaz
+
+MultiplyFred:
+
+	la $t0, fred
+	lb $s0, 0($t0)
+	
+	la $t0, y
+	lw $s1, 0($t0)
+
+	add $s2, $zero, $zero # sum=0
+	add $t0, $zero, $zero # i=0
+	j LoopBeginFred
+
+LoopBeginFoo:
+
+	# for loop
+	slt $t2, $t0, $s1
+	beq $t2, $zero, LoopEndFoo
+	
+	# loop body
+	add $s2, $s2, $s0 #sum = sum + x
+
+	#increment loop index
+	addi $t0, $t0, 1 # i++
+
+	j LoopBeginFoo
+
+LoopBeginBar:
+
+	# for loop
+	slt $t2, $t0, $s1
+	beq $t2, $zero, LoopEndBar
+	
+	# loop body
+	add $s2, $s2, $s0 #sum = sum + x
+
+	#increment loop index
+	addi $t0, $t0, 1 # i++
+
+	j LoopBeginBar
+
+LoopBeginBaz:
+
+	# for loop
+	slt $t2, $t0, $s1
+	beq $t2, $zero, LoopEndBaz
+	
+	# loop body
+	add $s2, $s2, $s0 #sum = sum + x
+
+	#increment loop index
+	addi $t0, $t0, 1 # i++
+
+	j LoopBeginBaz
+
+LoopBeginFred:
+
+	# for loop
+	slt $t2, $t0, $s1
+	beq $t2, $zero, LoopEndFred
+	
+	# loop body
+	add $s2, $s2, $s0 #sum = sum + x
+
+	#increment loop index
+	addi $t0, $t0, 1 # i++
+
+	j LoopBeginFred
+
+
+
+LoopEndFoo:
+	add $a0, $s2, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print space
+	la   $a0, space
+       	addi $v0, $zero, 4
+      	syscall
+	j MultiplyBar
+
+LoopEndBar:
+	add $a0, $s2, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# space
+	la   $a0, space
+       	addi $v0, $zero, 4
+      	syscall
+	j MultiplyBaz
+
+LoopEndBaz:
+	add $a0, $s2, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print space
+	la   $a0, space
+       	addi $v0, $zero, 4
+      	syscall
+	j MultiplyFred
+
+LoopEndFred:
+	add $a0, $s2, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# space
+	la   $a0, newline
+       	addi $v0, $zero, 4
+      	syscall
+	
+	# print newline
+	la   $a0, newline
+       	addi $v0, $zero, 4
+      	syscall
+
+	j selectMin
+
+MinimumFoo:
+	# set up and print the string "minimumString"
+	la $a0, minimumString
+	addi $v0, $zero, 4
+	syscall
+
+	la $t0, foo
+	lb $s0, 0($t0)
+
+MinimumBar:
+	la $t0, bar
+	lw $s1, 0($t0)
+
+	slt $t0, $s0, $s1
+	beq $t0, $zero, setBar
+	
+
+MinimumBaz:
+	la $t0, baz
+	lw $s2, 0($t0)
+
+	slt $t0, $s0, $s2
+	beq $t0, $zero, setBaz
+	
+
+MinimumFred:
+	la $t0, fred
+	lh $s3, 0($t0)
+
+	slt $t0, $s0, $s3
+	beq $t0, $zero, setFred
+	j PrintMin
+	
+	
+setBar:
+	add $s0, $s1, $zero
+	j MinimumBaz
+setBaz:
+	add $s0, $s2, $zero
+	j MinimumFred
+setFred:
+	add $s0, $s3, $zero
+	add $a0, $s0, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+	j done
+PrintMin:
+	add $a0, $s0, $zero
+	addi $v0, $zero, 1
+	syscall
+
+	# print newline
+	la   $a0, newline
+        	addi $v0, $zero, 4
+        	syscall
+	j done
+done:    # Epilogue for main -- restore stack & frame pointers and return
+         lw    $ra, 4($sp)    # get return address from stack
+         lw    $fp, 0($sp)    # restore the caller's frame pointer
+         addiu $sp, $sp, 24   # restore the caller's stack pointer
+         jr    $ra            # return to caller's code
+.data
+
+print:		.word	1
+sum:		.word	1
+multiply:	.word	1
+minimum:	.word	1
+
+foo:		.byte	58
+bar:		.word	59
+baz:		.word	-24
+fred:		.half	7
+
